@@ -1,0 +1,139 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+def pkg = project.findProperty("wireguardPackageName") ?: "com.example.tunnel"
+
+android {
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    namespace "${pkg}.tunnel"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "tools/CMakeLists.txt"
+        }
+    }
+
+    testOptions {
+        unitTests.all {
+            testLogging {
+                events "passed", "skipped", "failed"
+            }
+        }
+    }
+
+    buildTypes {
+        all {
+            externalNativeBuild {
+                cmake {
+                    targets "libwg-go.so", "libwg.so", "libwg-quick.so"
+                    arguments "-DGRADLE_USER_HOME=${project.gradle.gradleUserHomeDir}"
+                    arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                }
+            }
+        }
+
+        release {
+            externalNativeBuild {
+                cmake {
+                    arguments "-DANDROID_PACKAGE_NAME=${pkg}"
+                }
+            }
+        }
+
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments "-DANDROID_PACKAGE_NAME=${pkg}.debug"
+                }
+            }
+        }
+    }
+
+    lintOptions {
+        disable 'LongLogTag', 'NewApi'
+    }
+
+    publishing {
+        singleVariant("release") {
+            withJavadocJar()
+            withSourcesJar()
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.6.0'
+    implementation 'androidx.collection:collection:1.2.0'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = pkg
+            artifactId = "tunnel"
+            version = project.findProperty("wireguardVersionName") ?: "1.0.0"
+
+            afterEvaluate {
+                from components.release
+            }
+
+            pom {
+                name = "WireGuard Tunnel Library"
+                description = "Embeddable tunnel library for WireGuard for Android"
+                url = "https://www.wireguard.com/"
+
+                licenses {
+                    license {
+                        name = "The Apache Software License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:https://git.zx2c4.com/wireguard-android"
+                    developerConnection = "scm:git:https://git.zx2c4.com/wireguard-android"
+                    url = "https://git.zx2c4.com/wireguard-android"
+                }
+
+                developers {
+                    developer {
+                        name = "WireGuard"
+                        email = "team@wireguard.com"
+                        organization = "WireGuard"
+                        organizationUrl = "https://www.wireguard.com/"
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "sonatype"
+            url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = System.getenv("SONATYPE_USER")
+                password = System.getenv("SONATYPE_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications
+}

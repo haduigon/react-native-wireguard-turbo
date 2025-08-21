@@ -1,0 +1,43 @@
+{
+  "buildFiles": [
+    "/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/tools/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/igorkhlyupin/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/igorkhlyupin/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "libwg-go.so::@6890427a1f51a3e7e1df": {
+      "artifactName": "libwg-go.so",
+      "abi": "armeabi-v7a",
+      "runtimeFiles": []
+    },
+    "libwg-quick.so::@6890427a1f51a3e7e1df": {
+      "artifactName": "libwg-quick.so",
+      "abi": "armeabi-v7a",
+      "output": "/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/build/intermediates/cxx/Debug/29b1p5s3/obj/armeabi-v7a/libwg-quick.so",
+      "runtimeFiles": []
+    },
+    "libwg.so::@6890427a1f51a3e7e1df": {
+      "artifactName": "libwg.so",
+      "abi": "armeabi-v7a",
+      "output": "/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/build/intermediates/cxx/Debug/29b1p5s3/obj/armeabi-v7a/libwg.so",
+      "runtimeFiles": []
+    },
+    "elf-cleaner::@6890427a1f51a3e7e1df": {
+      "artifactName": "elf-cleaner",
+      "abi": "armeabi-v7a",
+      "runtimeFiles": []
+    }
+  }
+}

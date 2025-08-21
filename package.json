@@ -1,0 +1,40 @@
+{
+  "name": "react-native-wireguard-turbo",
+  "version": "0.1.0-beta.1",
+  "description": "WireGuard TurboModule for React Native (Android) with :tunnel bundled.",
+  "license": "GPL-2.0",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "react-native": "dist/src/index.js",
+  "files": [
+    "dist/**",
+    "src/**",
+    "specs/**",
+    "android/build.gradle",
+    "android/gradle.properties",
+    "android/src/**",
+    "android/wireguard/tunnel/tunnel.aar",
+    "react-native.config.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-native": ">=0.80.0"
+  },
+  "codegenConfig": {
+    "name": "WireGuardSpecs",
+    "type": "modules",
+    "jsSrcsDir": "./specs",
+    "android": {
+      "javaPackageName": "com.igorkhlyupin.wireguard"
+    }
+  }
+}

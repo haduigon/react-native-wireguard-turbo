@@ -1,0 +1,4 @@
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/5p3i33m1/armeabi-v7a/CMakeFiles/elf-cleaner
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/5p3i33m1/armeabi-v7a/CMakeFiles/elf-cleaner.rule
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/5p3i33m1/armeabi-v7a/CMakeFiles/libwg-go.so
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/5p3i33m1/armeabi-v7a/CMakeFiles/libwg-go.so.rule

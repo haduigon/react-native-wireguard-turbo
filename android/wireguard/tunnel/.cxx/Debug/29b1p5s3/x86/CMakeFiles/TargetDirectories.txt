@@ -1,0 +1,6 @@
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/libwg-quick.so.dir
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/libwg.so.dir
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/libwg-go.so.dir
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/elf-cleaner.dir
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/edit_cache.dir
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/.cxx/Debug/29b1p5s3/x86/CMakeFiles/rebuild_cache.dir

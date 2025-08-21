@@ -1,0 +1,8 @@
+rootProject.name = "react-native-wireguard-turbo"
+
+// This runs inside the APP's settings context when your lib is installed.
+// Resolve your lib’s android/ inside node_modules of the app:
+def libRoot = new File(settingsDir, "node_modules/react-native-wireguard-turbo/android")
+
+include(":tunnel")
+project(":tunnel").projectDir = new File(libRoot, "wireguard/tunnel")

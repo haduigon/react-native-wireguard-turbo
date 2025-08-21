@@ -1,0 +1,1 @@
+/Users/igorkhlyupin/turbotest/wireguardTest/android/wireguard/tunnel/build/intermediates/cxx/Debug/5p3i33m1/obj/x86
