@@ -29,7 +29,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haduigon/react-native-wireguard-turbo.git"
+    "url": "https://github.com/haduigon/react-native-wireguard-turbo.git"
   },
   "homepage": "https://github.com/haduigon/react-native-wireguard-turbo#readme",
   "scripts": {
