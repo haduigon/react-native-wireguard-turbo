@@ -18,6 +18,20 @@
     "LICENSE",
     "README.md"
   ],
+  "keywords": [
+    "react-native",
+    "wireguard",
+    "vpn",
+    "turbomodule",
+    "android",
+    "codegen",
+    "native-module"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haduigon/react-native-wireguard-turbo.git"
+  },
+  "homepage": "https://github.com/haduigon/react-native-wireguard-turbo#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "npm run build"
