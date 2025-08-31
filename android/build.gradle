@@ -28,5 +28,5 @@ dependencies {
   if (project.hasProperty("hermesEnabled") && hermesEnabled.toBoolean()) {
     implementation "com.facebook.react:hermes-android"
   }
-  implementation files("wireguard/tunnel/tunnel.aar")
+  implementation files("libs/tunnel.jar")
 }

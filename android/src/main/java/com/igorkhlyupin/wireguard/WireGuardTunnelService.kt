@@ -17,7 +17,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 
-class WireGuardTunnelService : VpnService() {
+class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnService() {
 
   companion object {
     private const val TAG = "WireGuardSvc"
