@@ -8,6 +8,8 @@ export interface Spec extends TurboModule {
   connect(config: string): Promise<void>;
   disconnect(): Promise<void>;
   getState(): Promise<State>;
+  isAnyVpnActive(): Promise<boolean>;
+  isMyVpnActive(): Promise<boolean>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('WireGuard');

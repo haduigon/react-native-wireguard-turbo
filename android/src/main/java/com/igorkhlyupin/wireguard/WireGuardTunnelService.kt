@@ -1,5 +1,6 @@
 package com.igorkhlyupin.wireguard
 
+import android.net.NetworkRequest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -36,25 +37,69 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
   private var tunnel: Tunnel? = null
   private val starting = AtomicBoolean(false)
   private var currentConfig: Config? = null
+  // vpn listener
+  private val vpnCb = object : ConnectivityManager.NetworkCallback() {
+  override fun onAvailable(n: Network) {
+    val lp = cm.getLinkProperties(n)
+    val ips = lp?.linkAddresses?.joinToString { it.address?.hostAddress ?: "?" } ?: "none"
+    Log.d(TAG, "[VPN-ONLY] onAvailable n=$n ips=$ips")
+  }
+  override fun onCapabilitiesChanged(n: Network, caps: NetworkCapabilities) {
+    val hasVpn = caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+    Log.d(TAG, "[VPN-ONLY] onCaps n=$n hasVpn=$hasVpn caps=$caps")
+  }
+  override fun onLost(n: Network) {
+    Log.d(TAG, "[VPN-ONLY] onLost n=$n")
+  }
+}
 
   private val cm by lazy {getSystemService(ConnectivityManager::class.java)}
+  private fun isMyVpnActiveNow(): Boolean {
+    val cfg = currentConfig ?: return false
+    val myIps = try {
+      cfg.`interface`.addresses.map { it.toString().substringBefore('/') }.toSet()
+    } catch (_: Throwable) {
+      emptySet()
+    }
+    if (myIps.isEmpty()) return false
+
+    for (n in cm.allNetworks) {
+      val caps = cm.getNetworkCapabilities(n) ?: continue
+      if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) continue
+      val lp = cm.getLinkProperties(n) ?: continue
+      val vpnIps = lp.linkAddresses.mapNotNull { it.address?.hostAddress }
+      if (vpnIps.any { it in myIps }) return true
+    }
+    return false
+  }
   private val netCb = object : ConnectivityManager.NetworkCallback() {
     override fun onAvailable(n : Network) {
-      Log.d(TAG, "Network available -> rebind")
+      // Log.d(TAG, "Network available -> rebind!!")
+      // Log.d(TAG, "New log before")
+      // Log.d(TAG, "[MINE] onAvailable=${isMyVpnActiveNow()}")
+      // Log.d(TAG, "New log after")
       rebind(n)
     }
     override fun onLost(n : Network) {
-      Log.d(TAG, "Network lost -> rebind to default")
+      // Log.d(TAG, "Network lost -> rebind to default!!")
+      // Log.d(TAG, "New log before")
+      // Log.d(TAG, "[MINE] onLost=${isMyVpnActiveNow()}")
+      // Log.d(TAG, "New log after")
       rebind(null)
     }
     override fun onCapabilitiesChanged(n: Network, caps: NetworkCapabilities) {
-      Log.d(TAG, "Network capabilities changed -> rebind")
+      // Log.d(TAG, "Network capabilities changed -> rebind!!")
+      // Log.d(TAG, "New log before")
+      // Log.d(TAG, "[MINE] onCaps=${isMyVpnActiveNow()}")
+      // Log.d(TAG, "New log after")
       rebind(n)
     }
   }
 
   override fun onCreate() {
+    Log.d("WireGuardSvc", "BUILD_MARK 2025-10-20T20:45");
     super.onCreate()
+    Log.d("WireGuardSvc", "BUILD_MARK 2025-10-20T20:45");
     if (Build.VERSION.SDK_INT >= 26) {
       val nm = getSystemService(NotificationManager::class.java)
       nm.createNotificationChannel(
@@ -79,6 +124,7 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
         Log.d(TAG, "Stop requested")
         stopTunnel()
         stopSelf()
+        try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
         return Service.START_NOT_STICKY
       }
       ACTION_START, null -> {
@@ -114,6 +160,9 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
             Log.d(TAG, "state=$state")
             if (state == Tunnel.State.DOWN) {
               tunnelIsRunning.set(false)
+
+              try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
+
               try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
               try { if (Build.VERSION.SDK_INT >= 22) setUnderlyingNetworks(emptyArray()) } catch (_: Throwable) {}
               try { backend?.let { b -> tunnel?.let { t -> b.setState(t, Tunnel.State.DOWN, null) } } } catch (_: Throwable) {}
@@ -134,6 +183,21 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
 
         be.setState(tn, Tunnel.State.UP, cfg)
         cm.registerDefaultNetworkCallback(netCb)
+        
+        try {
+          val vpnReqBuilder = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_VPN)   // ADDED
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            vpnReqBuilder.setIncludeOtherUidNetworks(true)         // ADDED: see VPN agent despite owner-UID exclusion
+          }
+          val vpnReq = vpnReqBuilder.build()                        // ADDED
+          cm.registerNetworkCallback(vpnReq, vpnCb)                 // ADDED
+          Log.d(TAG, "[VPN-ONLY] listener registered (includeOtherUidNetworks=${Build.VERSION.SDK_INT >= Build.VERSION_CODES.S})") // ADDED
+        } catch (t: Throwable) {
+          Log.w(TAG, "[VPN-ONLY] register failed", t)
+        }
+
+
         backend = be
         tunnel = tn
         Log.d(TAG, "Tunnel up")
@@ -150,6 +214,7 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
         nm.notify(N_ID, notif)
       } catch (t: Throwable) {
         Log.e(TAG, "Tunnel failed", t)
+        try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
         stopSelf()
       } finally {
         starting.set(false)
@@ -160,6 +225,7 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
   private fun stopTunnel() {
     try {
       try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
+      try { cm.unregisterNetworkCallback(vpnCb) } catch (_: Throwable) {}
       tunnelIsRunning.set(false)
       val be = backend
       val tn = tunnel
@@ -174,6 +240,7 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
       backend = null
       tunnel = null
       currentConfig = null
+      try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
     }
   }
 
@@ -198,7 +265,9 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
   override fun onDestroy() {
     Log.d(TAG, "Service destroyed from system")
     try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
+    try { cm.unregisterNetworkCallback(vpnCb) } catch (_: Throwable) {}
     stopTunnel()
+    try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
     stopForeground(STOP_FOREGROUND_REMOVE)
     Log.d(TAG, "Service destroyed")
     super.onDestroy()

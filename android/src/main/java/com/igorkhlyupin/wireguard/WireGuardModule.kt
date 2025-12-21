@@ -7,6 +7,9 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.turbomodule.core.interfaces.TurboModule
 import com.igorkhlyupin.wireguard.WireGuardTunnelService
 import com.igorkhlyupin.wireguard.NativeWireGuardSpec
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 class WireGuardModule(private val ctx: ReactApplicationContext) :
   NativeWireGuardSpec(ctx) {
@@ -45,4 +48,52 @@ class WireGuardModule(private val ctx: ReactApplicationContext) :
     val state = if (WireGuardTunnelService.tunnelIsRunning.get()) "UP" else "DOWN"
     promise.resolve(state)
 }
+
+  override fun isAnyVpnActive(promise: Promise) {
+  try {
+    val cm = ctx
+      .getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+
+    if (cm == null) {
+      promise.resolve(false)
+      return
+    }
+
+    val anyVpn = cm.allNetworks.any { net ->
+      val caps = cm.getNetworkCapabilities(net)
+      caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
+    promise.resolve(anyVpn)
+  } catch (e: Exception) {
+    promise.reject("VPN_DETECT_ERROR", e)
+  }
 }
+
+override fun isMyVpnActive(promise: Promise) {
+  try {
+    val cm = ctx
+      .getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+
+    if (cm == null) {
+      promise.resolve(false)
+      return
+    }
+
+    val myUid = ctx.applicationInfo.uid
+
+    val myVpn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      cm.allNetworks.any { net ->
+        val caps = cm.getNetworkCapabilities(net) ?: return@any false
+        caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) && (caps.ownerUid == myUid)
+      }
+    } else {
+      WireGuardTunnelService.tunnelIsRunning.get()
+    }
+
+    promise.resolve(myVpn)
+  } catch (e: Exception) {
+    promise.reject("VPN_DETECT_ERROR", e)
+  }
+}
+  }
