@@ -37,7 +37,7 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
   private var tunnel: Tunnel? = null
   private val starting = AtomicBoolean(false)
   private var currentConfig: Config? = null
-  // vpn listener
+
   private val vpnCb = object : ConnectivityManager.NetworkCallback() {
   override fun onAvailable(n: Network) {
     val lp = cm.getLinkProperties(n)
@@ -71,29 +71,6 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
       if (vpnIps.any { it in myIps }) return true
     }
     return false
-  }
-  private val netCb = object : ConnectivityManager.NetworkCallback() {
-    override fun onAvailable(n : Network) {
-      // Log.d(TAG, "Network available -> rebind!!")
-      // Log.d(TAG, "New log before")
-      // Log.d(TAG, "[MINE] onAvailable=${isMyVpnActiveNow()}")
-      // Log.d(TAG, "New log after")
-      rebind(n)
-    }
-    override fun onLost(n : Network) {
-      // Log.d(TAG, "Network lost -> rebind to default!!")
-      // Log.d(TAG, "New log before")
-      // Log.d(TAG, "[MINE] onLost=${isMyVpnActiveNow()}")
-      // Log.d(TAG, "New log after")
-      rebind(null)
-    }
-    override fun onCapabilitiesChanged(n: Network, caps: NetworkCapabilities) {
-      // Log.d(TAG, "Network capabilities changed -> rebind!!")
-      // Log.d(TAG, "New log before")
-      // Log.d(TAG, "[MINE] onCaps=${isMyVpnActiveNow()}")
-      // Log.d(TAG, "New log after")
-      rebind(n)
-    }
   }
 
   override fun onCreate() {
@@ -162,36 +139,23 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
               tunnelIsRunning.set(false)
 
               try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
-
-              try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
+              try { cm.unregisterNetworkCallback(vpnCb) } catch (_: Throwable) {}
               try { if (Build.VERSION.SDK_INT >= 22) setUnderlyingNetworks(emptyArray()) } catch (_: Throwable) {}
-              try { backend?.let { b -> tunnel?.let { t -> b.setState(t, Tunnel.State.DOWN, null) } } } catch (_: Throwable) {}
               if (Build.VERSION.SDK_INT >= 24) stopForeground(Service.STOP_FOREGROUND_REMOVE) else stopForeground(true)
               stopSelf()
             }
           }
         }
 
-        cm.activeNetwork?.let { n ->
-          try {
-            setUnderlyingNetworks(arrayOf(n))
-          } catch (t: Throwable) {
-            Log.w(TAG, "Failed to set underlying networks", t)
-          }
-        }
-
-
         be.setState(tn, Tunnel.State.UP, cfg)
-        cm.registerDefaultNetworkCallback(netCb)
         
         try {
           val vpnReqBuilder = NetworkRequest.Builder()
-            .addTransportType(NetworkCapabilities.TRANSPORT_VPN)   // ADDED
+            .addTransportType(NetworkCapabilities.TRANSPORT_VPN)
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            vpnReqBuilder.setIncludeOtherUidNetworks(true)         // ADDED: see VPN agent despite owner-UID exclusion
+            vpnReqBuilder.setIncludeOtherUidNetworks(true)
           }
-          val vpnReq = vpnReqBuilder.build()                        // ADDED
-          cm.registerNetworkCallback(vpnReq, vpnCb)                 // ADDED
+          val vpnReq = vpnReqBuilder.build()
           Log.d(TAG, "[VPN-ONLY] listener registered (includeOtherUidNetworks=${Build.VERSION.SDK_INT >= Build.VERSION_CODES.S})") // ADDED
         } catch (t: Throwable) {
           Log.w(TAG, "[VPN-ONLY] register failed", t)
@@ -224,7 +188,6 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
 
   private fun stopTunnel() {
     try {
-      try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
       try { cm.unregisterNetworkCallback(vpnCb) } catch (_: Throwable) {}
       tunnelIsRunning.set(false)
       val be = backend
@@ -244,27 +207,8 @@ class WireGuardTunnelService : com.wireguard.android.backend.GoBackend.VpnServic
     }
   }
 
-  private fun rebind(network: Network?) {
-    if (!tunnelIsRunning.get()) return
-    val be = backend ?: return
-    val tn = tunnel ?: return
-    val cfg = currentConfig ?: return
-
-    try {
-      setUnderlyingNetworks(
-        network?.let { arrayOf(it) } ?: emptyArray()
-      )
-
-      be.setState(tn, Tunnel.State.UP, cfg)
-      Log.d(TAG, "Rebound tunnel on network=${network?.toString() ?: "default"}")
-    } catch (t: Throwable) {
-      Log.w(TAG, "Rebind failed; will rely on next event", t)
-    }
-  }
-
   override fun onDestroy() {
     Log.d(TAG, "Service destroyed from system")
-    try { cm.unregisterNetworkCallback(netCb) } catch (_: Throwable) {}
     try { cm.unregisterNetworkCallback(vpnCb) } catch (_: Throwable) {}
     stopTunnel()
     try { getSystemService(NotificationManager::class.java).cancel(N_ID) } catch (_: Throwable) {}
