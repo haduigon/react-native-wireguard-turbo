@@ -14,7 +14,9 @@
     "android/gradle.properties",
     "android/libs/tunnel.jar",
     "android/src/**",
+    "ios/**",
     "react-native.config.js",
+    "react-native-wireguard-turbo.podspec",
     "LICENSE",
     "README.md"
   ],
@@ -49,6 +51,9 @@
     "jsSrcsDir": "./specs",
     "android": {
       "javaPackageName": "com.igorkhlyupin.wireguard"
+    },
+    "ios": {
+      "componentDescriptors": []
     }
   }
 }
