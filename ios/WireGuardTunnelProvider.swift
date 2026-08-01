@@ -1,5 +1,6 @@
 import NetworkExtension
 import WireGuardKit
+import UserNotifications
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
@@ -23,6 +24,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     guard expiry > Date() else {
+      let content = UNMutableNotificationContent()
+      content.title = "VPN Disconnected"
+      content.body = "Your subscription has expired."
+      let request = UNNotificationRequest(identifier: "sub_expired", content: content, trigger: nil)
+      UNUserNotificationCenter.current().add(request)
       completionHandler(ProviderError.subscriptionExpired); return
     }
 
