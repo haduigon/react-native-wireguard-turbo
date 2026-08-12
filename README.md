@@ -571,6 +571,14 @@ module.exports = withWireGuard;
 
 It would be very helpful if `EXTENSION_NAME = "WireGuardNetworkExtension";` matched your Extension App ID (`your_name.WireGuardNetworkExtension`).
 
+There is also a method, `setSubscriptionExpiry(ms: number)`, and you can use it:
+
+```typescript
+await WG.setSubscriptionExpiry(Date.now() + 1000 * 60)
+```
+
+If the user launches the VPN from VPN Settings, not from the application, it checks whether this date has expired before connecting and rejects the connection if it has.
+
 ### 📖 More details
 
 I’ve written a full article describing the process of creating this library:  
