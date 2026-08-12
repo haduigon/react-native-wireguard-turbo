@@ -299,6 +299,278 @@ export default function HomeScreen() {
 }
 ```
 
+## ⚡ React Native WireGuard (IOS)
+
+Installation on iOS is pretty much the same, but you need to do a few additional things:
+
+You need your `teamId` and `appGroupId`. Fill them in in `app.json`.
+
+Then, on developer.apple.com:
+
+You need to create:
+
+1. App Group
+   Go to Certificates > Identifiers > App Groups
+   Create: `your_name`
+
+2. Main App ID (`your_name`)
+   Capabilities to enable: App Groups + Network Extensions
+   Link the app group you created above.
+
+3. Extension App ID (`your_name.WireGuardNetworkExtension`)
+   Capabilities to enable: App Groups + Network Extensions (Packet Tunnel Provider)
+   Link the same app group.
+
+The linking happens inside each App ID—when you enable the App Groups capability, it lets you select which groups to attach. Both the main app and the extension must have the same group attached so they can share UserDefaults.
+
+After that, Xcode's automatic signing picks it all up when you build.
+
+For the main app and the extension App ID, enable only these two:
+
+App Groups
+Network Extensions
+
+What to toggle inside Network Extensions:
+
+Enable Packet Tunnel—that's the only one you need.
+
+After creating both App IDs, open each one and, under the App Groups capability, click Configure—it will show your app groups list. Select `your_name` and save.
+
+Do this for both App IDs. That's the link.
+
+If you want to change, let's say, the server address or description from “WireGuard,” open `WireGuardModule.swift`, find these lines:
+
+```swift
+proto.serverAddress = "WireGuard"
+manager.localizedDescription = "WireGuard"
+```
+
+and change them!
+
+You also need a plugin to create and manage targets. This is an example (or use AI—they are very good at creating plugins):
+
+
+```javascript
+const {
+  withXcodeProject,
+  withEntitlementsPlist,
+  withDangerousMod,
+} = require("@expo/config-plugins");
+const path = require("path");
+const fs = require("fs");
+
+const EXTENSION_NAME = "WireGuardNetworkExtension";
+
+function withWireGuard(config, options = {}) {
+  const appGroupId =
+    options.appGroupId || `group.${config.ios?.bundleIdentifier}`;
+
+  config = withMainAppEntitlements(config, appGroupId);
+  config = withExtensionFiles(config, appGroupId);
+  config = withExtensionTarget(config, appGroupId);
+  config = withMainAppSigning(config);
+
+  return config;
+}
+
+function withMainAppEntitlements(config, appGroupId) {
+  return withEntitlementsPlist(config, (c) => {
+    c.modResults["com.apple.developer.networking.networkextension"] = [
+      "packet-tunnel-provider",
+    ];
+    c.modResults["com.apple.security.application-groups"] = [appGroupId];
+    return c;
+  });
+}
+
+function withExtensionFiles(config, appGroupId) {
+  return withDangerousMod(config, [
+    "ios",
+    async (c) => {
+      const iosRoot = c.modRequest.platformProjectRoot;
+      const extDir = path.join(iosRoot, EXTENSION_NAME);
+      const extensionBundleId = `${c.ios?.bundleIdentifier}.${EXTENSION_NAME}`;
+
+      if (!fs.existsSync(extDir)) {
+        fs.mkdirSync(extDir, { recursive: true });
+      }
+
+      const src = path.join(
+        c.modRequest.projectRoot,
+        "node_modules/react-native-wireguard-turbo/ios/WireGuardTunnelProvider.swift",
+      );
+      fs.copyFileSync(src, path.join(extDir, "PacketTunnelProvider.swift"));
+
+      const wgQuickSrc = path.join(
+        c.modRequest.projectRoot,
+        "node_modules/react-native-wireguard-turbo/ios/TunnelConfiguration+WgQuickConfig.swift",
+      );
+      const stringSrc = path.join(
+        c.modRequest.projectRoot,
+        "node_modules/react-native-wireguard-turbo/ios/String+ArrayConversion.swift",
+      );
+      fs.copyFileSync(
+        wgQuickSrc,
+        path.join(extDir, "TunnelConfiguration+WgQuickConfig.swift"),
+      );
+
+      fs.copyFileSync(
+        stringSrc,
+        path.join(extDir, "String+ArrayConversion.swift"),
+      );
+
+      fs.writeFileSync(
+        path.join(extDir, `${EXTENSION_NAME}-Info.plist`),
+        `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>${EXTENSION_NAME}</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>${extensionBundleId}</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>XPC!</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$(MARKETING_VERSION)</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>NSExtension</key>
+  <dict>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.networkextension.packet-tunnel</string>
+    <key>NSExtensionPrincipalClass</key>
+    <string>$(PRODUCT_MODULE_NAME).PacketTunnelProvider</string>
+  </dict>
+</dict>
+</plist>`,
+      );
+
+      fs.writeFileSync(
+        path.join(extDir, `${EXTENSION_NAME}.entitlements`),
+        `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>com.apple.developer.networking.networkextension</key>
+  <array>
+    <string>packet-tunnel-provider</string>
+  </array>
+  <key>com.apple.security.application-groups</key>
+  <array>
+    <string>${appGroupId}</string>
+  </array>
+</dict>
+</plist>`,
+      );
+
+      return c;
+    },
+  ]);
+}
+
+function withExtensionTarget(config, appGroupId) {
+  return withXcodeProject(config, (c) => {
+    const project = c.modResults;
+    const extensionBundleId = `${c.ios?.bundleIdentifier}.${EXTENSION_NAME}`;
+
+    const targets = project.pbxNativeTargetSection();
+    const exists = Object.values(targets).some(
+      (t) => t && t.name === EXTENSION_NAME,
+    );
+    if (exists) return c;
+
+    const target = project.addTarget(
+      EXTENSION_NAME,
+      "app_extension",
+      EXTENSION_NAME,
+      extensionBundleId,
+    );
+
+    const extGroup = project.addPbxGroup([], EXTENSION_NAME, EXTENSION_NAME);
+    const mainGroupUuid = project.getFirstProject().firstProject.mainGroup;
+    project.addToPbxGroup(extGroup.uuid, mainGroupUuid);
+
+    project.addBuildPhase(
+      [
+        `${EXTENSION_NAME}/PacketTunnelProvider.swift`,
+        `${EXTENSION_NAME}/TunnelConfiguration+WgQuickConfig.swift`,
+        `${EXTENSION_NAME}/String+ArrayConversion.swift`,
+      ],
+      "PBXSourcesBuildPhase",
+      "Sources",
+      target.uuid,
+    );
+
+    project.addBuildPhase(
+      [
+        "../node_modules/react-native-wireguard-turbo/ios/WireGuardKit.xcframework",
+      ],
+      "PBXFrameworksBuildPhase",
+      "Frameworks",
+      target.uuid,
+    );
+
+    const buildConfigs = project.pbxXCBuildConfigurationSection();
+    Object.keys(buildConfigs).forEach((key) => {
+      const cfg = buildConfigs[key];
+      if (
+        cfg.buildSettings &&
+        cfg.buildSettings.PRODUCT_NAME === `"${EXTENSION_NAME}"`
+      ) {
+        cfg.buildSettings.SWIFT_VERSION = "5.5";
+        cfg.buildSettings.IPHONEOS_DEPLOYMENT_TARGET = "15.0";
+        cfg.buildSettings.INFOPLIST_FILE = `${EXTENSION_NAME}/${EXTENSION_NAME}-Info.plist`;
+        cfg.buildSettings.CODE_SIGN_ENTITLEMENTS = `${EXTENSION_NAME}/${EXTENSION_NAME}.entitlements`;
+        cfg.buildSettings.DEVELOPMENT_TEAM = c.ios?.appleTeamId || "";
+        cfg.buildSettings.CODE_SIGN_STYLE = "Automatic";
+        cfg.buildSettings.MARKETING_VERSION = "1.0.0";
+        cfg.buildSettings.CURRENT_PROJECT_VERSION = "1";
+      }
+    });
+
+    return c;
+  });
+}
+
+function withMainAppSigning(config) {
+  return withXcodeProject(config, (c) => {
+    const project = c.modResults;
+
+    const nativeTargets = project.pbxNativeTargetSection();
+    const mainTarget = Object.values(nativeTargets).find(
+      (t) => t && t.productType === '"com.apple.product-type.application"',
+    );
+    if (!mainTarget) return c;
+
+    const configList =
+      project.pbxXCConfigurationList()[mainTarget.buildConfigurationList];
+    if (!configList) return c;
+
+    const buildConfigs = project.pbxXCBuildConfigurationSection();
+    configList.buildConfigurations.forEach(({ value: configId }) => {
+      const cfg = buildConfigs[configId];
+      if (cfg && cfg.buildSettings) {
+        cfg.buildSettings.CODE_SIGN_STYLE = "Automatic";
+        cfg.buildSettings.DEVELOPMENT_TEAM = c.ios?.appleTeamId || "";
+      }
+    });
+
+    return c;
+  });
+}
+
+module.exports = withWireGuard;
+```
+
+It would be very helpful if `EXTENSION_NAME = "WireGuardNetworkExtension";` matched your Extension App ID (`your_name.WireGuardNetworkExtension`).
+
 ### 📖 More details
 
 I’ve written a full article describing the process of creating this library:  
