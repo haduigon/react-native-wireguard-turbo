@@ -7,6 +7,7 @@ export interface Spec extends TurboModule {
     getState(): Promise<State>;
     isAnyVpnActive(): Promise<boolean>;
     isMyVpnActive(): Promise<boolean>;
+    setSubscriptionExpiry(timestamp: number): Promise<void>;
 }
 declare const _default: Spec;
 export default _default;
