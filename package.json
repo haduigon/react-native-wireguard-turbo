@@ -1,6 +1,6 @@
 {
   "name": "react-native-wireguard-turbo",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "WireGuard TurboModule for React Native (Android) with :tunnel bundled.",
   "license": "GPL-2.0",
   "main": "dist/src/index.js",

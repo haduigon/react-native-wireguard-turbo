@@ -96,4 +96,8 @@ override fun isMyVpnActive(promise: Promise) {
     promise.reject("VPN_DETECT_ERROR", e)
   }
 }
+
+override fun setSubscriptionExpiry(timestamp: Double, promise: Promise) {
+  promise.resolve(null)
+}
   }
