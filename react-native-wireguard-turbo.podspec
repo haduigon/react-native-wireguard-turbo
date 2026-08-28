@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.homepage     = package["homepage"]
   s.license      = package["license"]
   s.author = { "Igor Khlyupin" => "haduigon@gmail.com" }
-  s.platforms    = { :ios => "15.0" }
+  s.platforms    = { :ios => "15.0", :osx => "14.0" }
   s.source       = { :git => package["repository"]["url"], :tag => "v#{s.version}" }
 
   # Swift + ObjC source files in ios/ folder

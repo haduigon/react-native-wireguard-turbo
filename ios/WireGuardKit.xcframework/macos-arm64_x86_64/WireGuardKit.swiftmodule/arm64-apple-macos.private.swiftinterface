@@ -1,0 +1,182 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3 effective-5.10 (swiftlang-6.3.0.123.5 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-macosx14.0 -enable-objc-interop -enable-library-evolution -static -swift-version 5 -O -module-name WireGuardKit
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3
+import Foundation
+import Network
+import NetworkExtension
+import Swift
+import WireGuardKitC
+import WireGuardKitGo
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public struct DNSResolutionError : Foundation.LocalizedError {
+  public let errorCode: Swift.Int32
+  public let address: Swift.String
+  public var errorDescription: Swift.String? {
+    get
+  }
+}
+public struct DNSServer {
+  public let address: any Network.IPAddress
+  public init(address: any Network.IPAddress)
+}
+extension WireGuardKit.DNSServer : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.DNSServer, rhs: WireGuardKit.DNSServer) -> Swift.Bool
+}
+extension WireGuardKit.DNSServer {
+  public var stringRepresentation: Swift.String {
+    get
+  }
+  public init?(from addressString: Swift.String)
+}
+public struct Endpoint {
+  public let host: Network.NWEndpoint.Host
+  public let port: Network.NWEndpoint.Port
+  public init(host: Network.NWEndpoint.Host, port: Network.NWEndpoint.Port)
+}
+extension WireGuardKit.Endpoint : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.Endpoint, rhs: WireGuardKit.Endpoint) -> Swift.Bool
+}
+extension WireGuardKit.Endpoint : Swift.Hashable {
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension WireGuardKit.Endpoint {
+  public var stringRepresentation: Swift.String {
+    get
+  }
+  public init?(from string: Swift.String)
+}
+extension WireGuardKit.Endpoint {
+  public func hasHostAsIPAddress() -> Swift.Bool
+  public func hostname() -> Swift.String?
+}
+public struct InterfaceConfiguration {
+  public var privateKey: WireGuardKit.PrivateKey
+  public var addresses: [WireGuardKit.IPAddressRange]
+  public var listenPort: Swift.UInt16?
+  public var mtu: Swift.UInt16?
+  public var dns: [WireGuardKit.DNSServer]
+  public var dnsSearch: [Swift.String]
+  public init(privateKey: WireGuardKit.PrivateKey)
+}
+extension WireGuardKit.InterfaceConfiguration : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.InterfaceConfiguration, rhs: WireGuardKit.InterfaceConfiguration) -> Swift.Bool
+}
+public struct IPAddressRange {
+  public let address: any Network.IPAddress
+  public let networkPrefixLength: Swift.UInt8
+}
+extension WireGuardKit.IPAddressRange : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.IPAddressRange, rhs: WireGuardKit.IPAddressRange) -> Swift.Bool
+}
+extension WireGuardKit.IPAddressRange : Swift.Hashable {
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension WireGuardKit.IPAddressRange {
+  public var stringRepresentation: Swift.String {
+    get
+  }
+  public init?(from string: Swift.String)
+  public func subnetMask() -> any Network.IPAddress
+  public func maskedAddress() -> any Network.IPAddress
+}
+public struct PeerConfiguration {
+  public var publicKey: WireGuardKit.PublicKey
+  public var preSharedKey: WireGuardKit.PreSharedKey?
+  public var allowedIPs: [WireGuardKit.IPAddressRange]
+  public var endpoint: WireGuardKit.Endpoint?
+  public var persistentKeepAlive: Swift.UInt16?
+  public var rxBytes: Swift.UInt64?
+  public var txBytes: Swift.UInt64?
+  public var lastHandshakeTime: Foundation.Date?
+  public init(publicKey: WireGuardKit.PublicKey)
+}
+extension WireGuardKit.PeerConfiguration : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.PeerConfiguration, rhs: WireGuardKit.PeerConfiguration) -> Swift.Bool
+}
+extension WireGuardKit.PeerConfiguration : Swift.Hashable {
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+@_inheritsConvenienceInitializers public class PrivateKey : WireGuardKit.BaseKey {
+  public var publicKey: WireGuardKit.PublicKey {
+    get
+  }
+  convenience public init()
+  required public init?(rawValue: Foundation.Data)
+  @objc deinit
+}
+@_inheritsConvenienceInitializers public class PublicKey : WireGuardKit.BaseKey {
+  required public init?(rawValue: Foundation.Data)
+  @objc deinit
+}
+@_inheritsConvenienceInitializers public class PreSharedKey : WireGuardKit.BaseKey {
+  required public init?(rawValue: Foundation.Data)
+  @objc deinit
+}
+public class BaseKey : Swift.RawRepresentable, Swift.Equatable, Swift.Hashable {
+  final public let rawValue: Foundation.Data
+  public var hexKey: Swift.String {
+    get
+  }
+  public var base64Key: Swift.String {
+    get
+  }
+  required public init?(rawValue: Foundation.Data)
+  convenience public init?(hexKey: Swift.String)
+  convenience public init?(base64Key: Swift.String)
+  public static func == (lhs: WireGuardKit.BaseKey, rhs: WireGuardKit.BaseKey) -> Swift.Bool
+  public typealias RawValue = Foundation.Data
+  @objc deinit
+}
+final public class TunnelConfiguration {
+  final public var name: Swift.String?
+  final public var interface: WireGuardKit.InterfaceConfiguration
+  final public let peers: [WireGuardKit.PeerConfiguration]
+  public init(name: Swift.String?, interface: WireGuardKit.InterfaceConfiguration, peers: [WireGuardKit.PeerConfiguration])
+  @objc deinit
+}
+extension WireGuardKit.TunnelConfiguration : Swift.Equatable {
+  public static func == (lhs: WireGuardKit.TunnelConfiguration, rhs: WireGuardKit.TunnelConfiguration) -> Swift.Bool
+}
+public enum WireGuardAdapterError : Swift.Error {
+  case cannotLocateTunnelFileDescriptor
+  case invalidState
+  case dnsResolution([WireGuardKit.DNSResolutionError])
+  case setNetworkSettings(any Swift.Error)
+  case startWireGuardBackend(Swift.Int32)
+}
+public class WireGuardAdapter {
+  public typealias LogHandler = (WireGuardKit.WireGuardLogLevel, Swift.String) -> Swift.Void
+  public var interfaceName: Swift.String? {
+    get
+  }
+  public init(with packetTunnelProvider: NetworkExtension.NEPacketTunnelProvider, logHandler: @escaping WireGuardKit.WireGuardAdapter.LogHandler)
+  @objc deinit
+  public func getRuntimeConfiguration(completionHandler: @escaping (Swift.String?) -> Swift.Void)
+  public func start(tunnelConfiguration: WireGuardKit.TunnelConfiguration, completionHandler: @escaping (WireGuardKit.WireGuardAdapterError?) -> Swift.Void)
+  public func stop(completionHandler: @escaping (WireGuardKit.WireGuardAdapterError?) -> Swift.Void)
+  public func update(tunnelConfiguration: WireGuardKit.TunnelConfiguration, completionHandler: @escaping (WireGuardKit.WireGuardAdapterError?) -> Swift.Void)
+}
+public enum WireGuardLogLevel : Swift.Int32 {
+  case verbose
+  case error
+  public init?(rawValue: Swift.Int32)
+  public typealias RawValue = Swift.Int32
+  public var rawValue: Swift.Int32 {
+    get
+  }
+}
+extension WireGuardKit.WireGuardLogLevel : Swift.Equatable {}
+extension WireGuardKit.WireGuardLogLevel : Swift.Hashable {}
+extension WireGuardKit.WireGuardLogLevel : Swift.RawRepresentable {}

@@ -5,6 +5,7 @@ module.exports = {
         android: {
           sourceDir: 'android',
         },
+        macos: null,
       },
     },
   },

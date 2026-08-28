@@ -1,0 +1,9 @@
+module WireGuardKitC {
+    header "WireGuardKitC.h"
+    export *
+}
+
+module WireGuardKitGo {
+    header "wireguard.h"
+    export *
+}
